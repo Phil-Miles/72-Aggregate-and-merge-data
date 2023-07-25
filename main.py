@@ -63,15 +63,72 @@ themes_by_year.rename(columns={'theme_id': 'nr_themes'}, inplace=True)
 # >>> plt.show()
 
 # [5] put sets_by_year and themes_by_year in one chart
-# get a hold of x-axis and create another one
-ax1 = plt.gca()
-ax2 = ax1.twinx()
-# add styling
-ax1.plot(sets_by_year.index[:-2], sets_by_year.set_num[:-2], color='g')
-ax2.plot(themes_by_year.index[:-2], themes_by_year.nr_themes[:-2], 'b')
-# labeling
-ax1.set_xlabel('Year')
-ax1.set_ylabel('Number of Sets', color='green')
-ax2.set_ylabel('Number of Themes', color='blue')
-# display
+# # get a hold of x-axis and create another one
+# >>> ax1 = plt.gca()
+# >>> ax2 = ax1.twinx()
+# # add styling
+# >>> ax1.plot(sets_by_year.index[:-2], sets_by_year.set_num[:-2], color='g')
+# >>> ax2.plot(themes_by_year.index[:-2], themes_by_year.nr_themes[:-2], 'b')
+# # labeling
+# >>> ax1.set_xlabel('Year')
+# >>> ax1.set_ylabel('Number of Sets', color='green')
+# >>> ax2.set_ylabel('Number of Themes', color='blue')
+
+# [6] parts_per_set series by year
+# # we group the data by year and then average the number of parts by that year
+parts_per_set = sets_data.groupby('year').agg({'num_parts': pd.Series.mean})
+# >>> print(parts_per_set.head())
+#       num_parts
+# year
+# 1949  99.600000
+# 1950   1.000000
+# 1953  13.500000
+# 1954  12.357143
+# 1955  36.607143
+
+# [6.1] visualize this trend using the scatter plot
+# >>> plt.scatter(parts_per_set.index[:-2], parts_per_set.num_parts[:-2])
+# >>> plt.show()
+
+# [7] search for and list out sets corresponding to Star Wars theme
+# >>> print(themes_data[themes_data.name == 'Star Wars'])
+#       id       name  parent_id
+# 17    18  Star Wars        1.0
+# 150  158  Star Wars        NaN
+# 174  209  Star Wars      207.0
+# 211  261  Star Wars      258.0
+
+# [7.1] list out the corresponding products (sets)
+# >>> print(sets_data[sets_data.theme_id == 18])
+# >>> print(sets_data[sets_data.theme_id == 209])
+# etc.
+
+# .merge()
+# combines two separate dataframes into one
+# works on columns with the same name in both dataframes
+set_theme_count = sets_data["theme_id"].value_counts()
+set_theme_count = pd.DataFrame({'id': set_theme_count.index,
+                                'set_count': set_theme_count.values})
+# the keys in the provided dictionary ^ become column names
+# to use the .merge() we need to provide two data frames and a column name on which to merge
+# we chose 'id' for this, as both dataframes have this column
+merged_df = pd.merge(set_theme_count, themes_data, on='id')
+# >>> print(merged_df[:3])
+#     id  set_count       name  parent_id
+# 0  158        753  Star Wars        NaN
+# 1  501        656       Gear        NaN
+# 2  494        398    Friends        NaN
+
+# [8] plot the themes and their number of sets on a bar chart
+# >>> plt.bar(merged_df.name[:10], merged_df.set_count[:10])
+# >>> plt.show()
+
+# [8.1] format the text on x-axis to make it more readable
+plt.figure(figsize=(14, 8))
+plt.xticks(fontsize=14, rotation=45)
+plt.yticks(fontsize=14)
+plt.ylabel('Nr of Sets', fontsize=14)
+plt.xlabel('Theme Name', fontsize=14)
+
+plt.bar(merged_df.name[:10], merged_df.set_count[:10])
 plt.show()
